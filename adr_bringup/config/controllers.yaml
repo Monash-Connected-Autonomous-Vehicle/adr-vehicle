@@ -10,15 +10,5 @@ controller_manager:
 
 diff_drive_controller:
   ros__parameters:
-    inputs:
-     - gpio/fl_state
-     - gpio/fr_state
-     - gpio/bl_state
-     - gpio/br_state
-    outputs:
-     - gpio/fl_command
-     - gpio/fr_command
-     - gpio/bl_command
-     - gpio/br_command
-
-		left_wheel_names: 
+		left_wheel_names: ["fl", "bl"]
+		right_wheel_names: ["rl", "rl"]

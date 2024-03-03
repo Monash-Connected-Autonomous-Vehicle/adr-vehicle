@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(4wd_kit_hardware)
+project(adr_bringup)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -20,6 +20,13 @@ find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+
+# Add all the installation directories
+install(DIRECTORY
+  launch
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
 
 # Run build testing package nodes
 if(BUILD_TESTING)

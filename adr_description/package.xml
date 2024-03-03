@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>4wd_kit_hardware</name>
+  <name>adr_description</name>
   <version>1.0.0</version>
-  <description>ros2_control hardware interface package for the 4WD Kit Hardware [MCAV Autonomous Delivery Robot FYP]</description>
+  <description>description package for the MCAV Autonomous Delivery Robot FYP</description>
   <maintainer email="dylcg10@gmail.com">Dylan Gonzalez</maintainer>
   <license>Apache License 2.0</license>
 
