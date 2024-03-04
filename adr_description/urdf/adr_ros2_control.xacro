@@ -1,27 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro">
 
-  <xacro:macro name="rrbot_ros2_control" params="name prefix use_mock_hardware:=^|false mock_sensor_commands:=^|false">
+  <xacro:macro name="adr_ros2_control" params="name prefix"> 
 
     <ros2_control name="${name}" type="system">
 
       <hardware>
         <plugin>4wd_kit_hardware/4WDKitHardware</plugin>
+        <param name="IN1">27</param>
+        <param name="IN2">22</param>
+        <param name="IN3">25</param>
+        <param name="IN4">24</param>
+        <param name="ENA">23</param>
+        <param name="ENB">18</param>
       </hardware>
 
-      <gpio name="fl">
+      <gpio name="left">
         <command_interface name="command"/>
       </gpio>
 
-      <gpio name="fr">
-        <command_interface name="command"/>
-      </gpio>
-
-      <gpio name="bl">
-        <command_interface name="command"/>
-      </gpio>
-
-      <gpio name="br">
+      <gpio name="right">
         <command_interface name="command"/>
       </gpio>
     </ros2_control>
