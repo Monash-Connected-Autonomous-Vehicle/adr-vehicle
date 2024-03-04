@@ -10,22 +10,18 @@
       </hardware>
 
       <gpio name="fl">
-        <state_interface name="state"/>
         <command_interface name="command"/>
       </gpio>
 
       <gpio name="fr">
-        <state_interface name="state"/>
         <command_interface name="command"/>
       </gpio>
 
       <gpio name="bl">
-        <state_interface name="state"/>
         <command_interface name="command"/>
       </gpio>
 
       <gpio name="br">
-        <state_interface name="state"/>
         <command_interface name="command"/>
       </gpio>
     </ros2_control>
