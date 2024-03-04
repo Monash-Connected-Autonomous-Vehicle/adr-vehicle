@@ -26,6 +26,7 @@
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "gpiod.h"
 
 namespace 4wd_kit_hardware
 {
@@ -58,8 +59,21 @@ public:
     hardware_interface::return_type prepare_command_mode_switch(
         const std::vector<std::string> & start_interfaces,
         const std::vector<std::string> & stop_interfaces) override;
+
+private:
+    struct gpiod_chip *chip;
+    struct gpiod_line_bulk *left;
+    struct gpiod_line_bulk *right;
+    const char *chipname = "gpiochip0"
+
+    uint32_t in1;
+    uint32_t in2;
+    uint32_t in3;
+    uint32_t in4;
+    uint32_t ena;
+    uint32_t enb;
 };
 
-}  // namespace blcmd_hardware
+}  // namespace 4wd_kit_hardware
 
-#endif  // BLCMD_HARDWARE__BLCMD_HARDWARE_HPP_
+#endif  // 4WD_KIT_HARDWARE__4WD_KIT_HARDWARE_HPP_

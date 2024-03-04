@@ -31,29 +31,57 @@ hardware_interface::CallbackReturn 4WDKitHardware::on_init(
       return CallbackReturn::ERROR;
     }
 
-    4WDKitHardwareLoggerName = info_.name;
-
     if (info_.joints.size() != 1)
     {
       RCLCPP_FATAL_STREAM(
         rclcpp::get_logger(4WDKitHardwareLoggerName),
-        "Hardware interface '" << info_.name << "got " << info_.joints.size() << " joints but expected 1");
+        "Hardware interface '" << info_.name << "got " << info_.gpios.size() << " joints but expected 1");
       return CallbackReturn::ERROR;
     }
 
-    for (const auto& interface : info_.joints[0].command_interfaces){
+    auto in1_search = info_.hardware_parameters.find("IN1");
+    if (in1_search != info_.hardware_parameters.end()){
+        in1_ = std::stol(pin_search->second);
+    }
+
+    auto in2_search = info_.hardware_parameters.find("IN2");
+    if (in2_search != info_.hardware_parameters.end()){
+        in2_ = std::stol(pin_search->second);
+    }
+
+    auto in3_search = info_.hardware_parameters.find("IN3");
+    if (in3_search != info_.hardware_parameters.end()){
+        in3_ = std::stol(pin_search->second);
+    }
+
+    auto in4_search = info_.hardware_parameters.find("IN4");
+    if (in4_search != info_.hardware_parameters.end()){
+        in4_ = std::stol(pin_search->second);
+    }
+
+    auto ena_search = info_.hardware_parameters.find("ENA");
+    if (ena_search != info_.hardware_parameters.end()){
+        ena_ = std::stol(pin_search->second);
+    }
+
+    auto enb_search = info_.hardware_parameters.find("ENB");
+    if (enb_search != info_.hardware_parameters.end()){
+        enb_ = std::stol(pin_search->second);
+    }
+
+    for (const auto& interface : info_.gpios[0].command_interfaces){
         if(!set_control_interface(interface, true)){
             return CallbackReturn::ERROR;
         }
     }
 
-    for (const auto& interface : info_.joints[0].state_interfaces){
+    /*
+    for (const auto& interface : info_.gpios[0].state_interfaces){
         if(!set_control_interface(interface, false)){
             return CallbackReturn::ERROR;
         }
     }
-
-    control_mode_ = 4wd_kit_hardware::ControlMode::Undefined;
+    */
 
     return CallbackReturn::SUCCESS;
 }
@@ -61,118 +89,62 @@ hardware_interface::CallbackReturn 4WDKitHardware::on_init(
 hardware_interface::CallbackReturn 4WDKitHardware::on_configure(
         const rclcpp_lifecycle::State & previous_state)
 {
-    if (!mock_) {
-    //get min_interval
-        if (hw_velocity_.state.has_value()) {
-            RCLCPP_INFO_STREAM(rclcpp::get_logger(4WDKitHardwareLoggerName),
-                               "Getting min interval on BLCMD " << can_id_);
-    }
+    uint32_t left_offsets[2] = {IN1, IN2};
+    uint32_t right_offsets[2] = {IN3, IN4};
 
-    // check for resolver if there is a position interface
-    if (hw_position_.state.has_value() || hw_position_.command.has_value()) {
-        RCLCPP_INFO_STREAM(rclcpp::get_logger(4WDKitHardwareLoggerName),
-                           "Checking for resolver on BLCMD " << can_id_);
+    //Open GPIO lines
+    chip = gpiod_chip_open_by_name(chipname);
+    gpiod_chip_get_lines(chip, left_offsets, 2, &left);
+    gpiod_chip_get_lines(chip, right_offsets, 2, &right);
 
-        auto resolver_check = get_config<uint16_t>(BLCMDConfigCommand::HAS_RESOLVER);
-        if (resolver_check.has_value()) {
-            if (resolver_check.value()) {
-                RCLCPP_INFO_STREAM(rclcpp::get_logger(4WDKitHardwareLoggerName),
-                                   "Resolver detected on BLCMD " << can_id_);
-                return CallbackReturn::SUCCESS;
-            } else {
-                RCLCPP_FATAL_STREAM(rclcpp::get_logger(4WDKitHardwareLoggerName),
-                                    "No resolver detected on BLCMD " << can_id_);
-                return CallbackReturn::ERROR;
-            }
-        }
-        RCLCPP_FATAL_STREAM(rclcpp::get_logger(4WDKitHardwareLoggerName),
-                            "Error with resolver request on BLCMD" << can_id_);
-        return CallbackReturn::ERROR;
-
-    }
-    }
+    //Open lines for output
+    gpiod_line_request_bulk_output(left, "4wd_kit_hardware", 0);
+    gpiod_line_request_bulk_output(right, "4wd_kit_hardware", 0);
     
-  return CallbackReturn::SUCCESS;
+    return CallbackReturn::SUCCESS;
 }
 
 std::vector<hardware_interface::CommandInterface> 4WDKitHardware::export_command_interfaces()
 {
-  std::vector<hardware_interface::CommandInterface> command_interfaces;
-  if (hw_position_.command.has_value()) {
-      command_interfaces.emplace_back(
-              info_.joints[0].name, hardware_interface::HW_IF_POSITION, &hw_position_.command.value());
-  }
-  if (hw_velocity_.command.has_value()) {
-      command_interfaces.emplace_back(
-              info_.joints[0].name, hardware_interface::HW_IF_VELOCITY, &hw_velocity_.command.value());
-  }
-  if (hw_effort_.command.has_value()) {
-      command_interfaces.emplace_back(
-              info_.joints[0].name, hardware_interface::HW_IF_EFFORT, &hw_effort_.command.value());
-  }
+    std::vector<hardware_interface::CommandInterface> command_interfaces;
+    if (hw_position_.command.has_value()) {
+        command_interfaces.emplace_back(
+                info_.gpios[0].name, hardware_interface::HW_IF_POSITION, &hw_position_.command.value());
+    }
+    if (hw_velocity_.command.has_value()) {
+        command_interfaces.emplace_back(
+                info_.gpios[0].name, hardware_interface::HW_IF_VELOCITY, &hw_velocity_.command.value());
+    }
+    if (hw_effort_.command.has_value()) {
+        command_interfaces.emplace_back(
+                info_.gpios[0].name, hardware_interface::HW_IF_EFFORT, &hw_effort_.command.value());
+    }
 
-  return command_interfaces;
+    return command_interfaces;
 }
 
 hardware_interface::CallbackReturn 4WDKitHardware::on_activate(
         const rclcpp_lifecycle::State & /*previous_state*/)
 {
-    bus_->set_callbacks_enabled(true);
     return CallbackReturn::SUCCESS;
 }
 
 hardware_interface::CallbackReturn 4WDKitHardware::on_deactivate(
     const rclcpp_lifecycle::State & /*previous_state*/)
 {
-    bus_->set_callbacks_enabled(false);
     return CallbackReturn::SUCCESS;
 }
 
 hardware_interface::return_type 4WDKitHardware::read(
         const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-    bus_->spin();
     return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type 4WDKitHardware::write(
         const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-    switch(control_mode_){
-        case 4wd_kit_hardware::ControlMode::Undefined:
-            break;
-        case 4wd_kit_hardware::ControlMode::Position:
-            if (hw_position_.command.has_value()) {
-//                RCLCPP_INFO_STREAM(rclcpp::get_logger(4WDKitHardwareLoggerName),
-//                                   "Sending Position Command " << hw_position_.command.value());
-                send_scaled<int16_t>(make_can_id(BLCMDSendCommand::DRIVE_POSITION),
-                                     hw_position_.command.value() * reversed_multiplier_, hw_position_.max);
-            } else {
-                RCLCPP_FATAL(rclcpp::get_logger(4WDKitHardwareLoggerName), "No position command");
-                return hardware_interface::return_type::ERROR;
-            }
-            break;
-        case 4wd_kit_hardware::ControlMode::Velocity:
-            if (hw_velocity_.command.has_value()) {
-               RCLCPP_INFO_STREAM(rclcpp::get_logger(4WDKitHardwareLoggerName),
-                                  "Sending velocity command " << hw_velocity_.command.value() * reversed_multiplier_);
-                send_scaled<int16_t>(make_can_id(BLCMDSendCommand::DRIVE_VELOCITY),
-                                     hw_velocity_.command.value() * reversed_multiplier_, hw_velocity_.max);
-            } else {
-                RCLCPP_FATAL(rclcpp::get_logger(4WDKitHardwareLoggerName), "No velocity command");
-                return hardware_interface::return_type::ERROR;
-            }
-            break;
-        case 4wd_kit_hardware::ControlMode::Effort:
-            if (hw_effort_.command.has_value()) {
-                send_scaled<int16_t>(make_can_id(BLCMDSendCommand::DRIVE_CURRENT),
-                                     hw_effort_.command.value() * reversed_multiplier_, hw_effort_.max);
-            } else {
-                RCLCPP_FATAL(rclcpp::get_logger(4WDKitHardwareLoggerName), "No effort command");
-                return hardware_interface::return_type::ERROR;
-            }
-            break;
-    }
+
     return hardware_interface::return_type::OK;
 }
 
