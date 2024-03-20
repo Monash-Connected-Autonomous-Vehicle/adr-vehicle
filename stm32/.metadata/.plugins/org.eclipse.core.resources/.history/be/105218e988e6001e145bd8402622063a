@@ -1,0 +1,12 @@
+/*
+ * motor_encoder.c
+ *
+ *  Created on: Mar 20, 2024
+ *      Author: linal
+ */
+#include "motor_encoder.h"
+
+void update_encoder(encoder_instance *encoder_value, TIM_HandleTypeDef *htim)
+{
+	uint32_t temp_counter
+}
